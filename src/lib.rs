@@ -116,7 +116,8 @@ impl Writer {
 }
 
 pub struct Dir<'a> {
-    pub name: &'a str,
+    pub filename: &'a str, // The leaf filename.
+    pub path: String,      // The full path.
     pub subdirs: BTreeMap<&'a str, Dir<'a>>,
     pub files: BTreeMap<&'a str, &'a [u8]>,
 }
@@ -140,10 +141,14 @@ fn add_file<'a>(dir: &'_ mut Dir<'a>, name: &'a str, bytes: &'a [u8]) -> Result<
     let child: &mut Dir<'a> = if let Some(d) = dir.subdirs.get_mut(left) {
         d
     } else {
+        let mut new_path = dir.path.clone();
+        new_path.push('/');
+        new_path.push_str(left);
         dir.subdirs.insert(
             left,
             Dir {
-                name: left,
+                filename: left,
+                path: new_path,
                 subdirs: BTreeMap::new(),
                 files: BTreeMap::new(),
             },
@@ -232,7 +237,8 @@ pub fn unpack<'a>(buf: &'a [u8]) -> Result<Dir<'a>, ()> {
 
     // Now parse files into a directory tree.
     let mut root_dir = Dir {
-        name: "/",
+        filename: "",
+        path: "".to_owned(),
         subdirs: BTreeMap::new(),
         files: BTreeMap::new(),
     };
